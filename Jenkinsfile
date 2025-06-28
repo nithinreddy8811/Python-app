@@ -1,35 +1,48 @@
 pipeline {
-    agent any 
-    environment {
-    DOCKERHUB_CREDENTIALS = credentials('s3cloudhub-dockerhub')
-    }
-    stages { 
+    agent any
 
-        stage('Build docker image') {
-            steps {  
-                sh ' docker build -t vatsraj/pythonapp:$BUILD_NUMBER .'
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+        IMAGE_NAME = "nithinreddy0509/pythonapp"
+    }
+
+    stages {
+        stage('Clone Git Repo') {
+            steps {
+                git 'https://github.com/nithinreddy8811/Python-app.git'
             }
         }
-        stage('login to dockerhub') {
-            steps{
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER .'
+            }
+        }
+
+        stage('Login to DockerHub') {
+            steps {
                 sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
             }
         }
-        stage('push image') {
-            steps{
-                sh ' docker push vatsraj/pythonapp:$BUILD_NUMBER'
+
+        stage('Push Docker Image') {
+            steps {
+                sh 'docker push $IMAGE_NAME:$BUILD_NUMBER'
             }
         }
-}
-post {
+    }
+
+    post {
         always {
             sh 'docker logout'
         }
-success {
-                slackSend message: "Build deployed successfully - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
-            }
-    failure {
-        slackSend message: "Build failed  - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
-    }
+
+        success {
+            slackSend message: "✅ Build and Push Success: *${env.JOB_NAME}* #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
+        }
+
+        failure {
+            slackSend message: "❌ Build Failed: *${env.JOB_NAME}* #${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)"
+        }
     }
 }
