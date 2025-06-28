@@ -7,12 +7,6 @@ pipeline {
     }
 
     stages {
-        stage('Clone Git Repo') {
-            steps {
-                git branch: 'main', url: 'https://github.com/nithinreddy8811/Python-app.git'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER .'
